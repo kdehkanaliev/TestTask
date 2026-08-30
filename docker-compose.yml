@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: moliya_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-moliya}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-moliya_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-moliya_tracker}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moliya} -d ${POSTGRES_DB:-moliya_tracker}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: moliya_api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-moliya}:${POSTGRES_PASSWORD:-moliya_pass}@db:5432/${POSTGRES_DB:-moliya_tracker}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
