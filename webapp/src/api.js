@@ -8,7 +8,7 @@ import TelegramWebApp from "@twa-dev/sdk";
   backend shu header orqali foydalanuvchini aniqlaydi va autentifikatsiya qiladi.
 */
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+  "https://testtask-production-cb97.up.railway.app/api";
 
 // initData manbai: Telegram WebApp yoki (dev brauzerda test qilish uchun) URL parametri.
 export function getInitData() {
@@ -44,7 +44,7 @@ api.interceptors.response.use(
     normalized.status = error.response?.status;
     normalized.raw = error.response?.data;
     return Promise.reject(normalized);
-  }
+  },
 );
 
 export const statsApi = {

@@ -120,6 +120,9 @@ export default function App() {
 
   const isBrowserDev = !initData && typeof window !== "undefined";
 
+  // Debug: Telegram ichida initData borligini tekshirish (keyin olib tashlanadi)
+  const debugInitData = typeof window !== "undefined" ? window.Telegram?.WebApp?.initData : "";
+
   return (
     <div
       className="relative min-h-[100dvh] bg-base text-text"
@@ -191,6 +194,13 @@ export default function App() {
         <p className="pb-2 text-center text-[11px] text-muted">
           SmartFinance • {new Date().getFullYear()} — {user?.username || ""}
         </p>
+
+        {/* Tashxis (keyin o'chiriladi): initData holati */}
+        <div className="glass px-3 py-2 text-[11px] leading-relaxed text-muted">
+          <p><b>initData uzunligi:</b> {debugInitData ? debugInitData.length : "BO'SH"}</p>
+          <p><b>telegram user id:</b> {JSON.stringify(user?.id ?? window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? null)}</p>
+          <p><b>SDK initData uzunligi:</b> {initData ? initData.length : "BO'SH"}</p>
+        </div>
       </main>
     </div>
   );
