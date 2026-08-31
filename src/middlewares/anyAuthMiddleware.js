@@ -57,6 +57,12 @@ async function telegramWebAppAuth(req, res, next) {
 }
 
 export async function anyAuthMiddleware(req, res, next) {
+  // CORS preflight (OPTIONS) so'rovlari autentifikatsiyasiz o'tkaziladi,
+  // aks holda brauzer custom header'li so'rovni bloklaydi ("Network Error").
+  if (req.method === "OPTIONS") {
+    return next();
+  }
+
   // 1. Telegram WebApp initData — birinchi tekshiriladi.
   const handled = await telegramWebAppAuth(req, res, next);
   if (handled) return;
