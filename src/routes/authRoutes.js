@@ -3,6 +3,8 @@ import {
   register,
   login,
   tgCheck,
+  tgEmailCheck,
+  tgLogin,
   tgRegister,
   getAllUsers,
   updateUser,
@@ -92,6 +94,66 @@ router.post("/users/auth/login", login);
  *         description: tg_id kiritilmagan yoki noto'g'ri
  */
 router.get("/users/auth/tg-check", tgCheck);
+
+/**
+ * @swagger
+ * /api/users/auth/tg-email-check:
+ *   post:
+ *     summary: Email band yoki bo'shligini tekshirish
+ *     description: >
+ *       Bot ro'yxatdan o'tishning 1-qadamida (email kiritilgach) ushbu
+ *       endpointni chaqiradi. `exists: true` bo'lsa bot login rejimiga o'tadi,
+ *       aks holda register davom etadi.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, example: "user@mail.uz" }
+ *     responses:
+ *       200:
+ *         description: "exists: true/false"
+ *       400:
+ *         description: Email formati noto'g'ri
+ */
+router.post("/users/auth/tg-email-check", tgEmailCheck);
+
+/**
+ * @swagger
+ * /api/users/auth/tg-login:
+ *   post:
+ *     summary: Avval ro'yxatdan o'tgan email bilan Telegram orqali kirish
+ *     description: >
+ *       Email band bo'lsa bot parol so'raydi va parol tasdiqlangach bu endpoint
+ *       orqali tg_id email hisobiga bog'lanadi (login).
+ *       Parol noto'g'ri bo'lsa 401 qaytadi.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [tg_id, email, password]
+ *             properties:
+ *               tg_id: { type: integer, example: 123456789 }
+ *               username: { type: string, example: "alisher_tg" }
+ *               email: { type: string, example: "alisher@mail.uz" }
+ *               password: { type: string, format: password, example: "secret123" }
+ *               initData: { type: string }
+ *     responses:
+ *       200:
+ *         description: Muvaffaqiyatli login va tg_id bog'landi
+ *       400:
+ *         description: Ma'lumotlar noto'g'ri
+ *       401:
+ *         description: Email yoki parol noto'g'ri
+ */
+router.post("/users/auth/tg-login", tgLogin);
 
 /**
  * @swagger

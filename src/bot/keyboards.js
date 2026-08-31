@@ -1,69 +1,99 @@
 // Telegram tugmalari (reply + inline) quruvchi yordamchi modul.
-// Barcha markup obyektlari node-telegram-bot-api builderlari yordamida quriladi.
-import { InlineKeyboardBuilder, ReplyKeyboardBuilder } from "node-telegram-bot-api";
-
-// "❌ Bekor qilish" tugmasini inline keyboard oxiriga qo'shadi.
-function withCancel(builder) {
-  builder.row().text("❌ Bekor qilish", "cancel");
-  return builder.build();
-}
+// Markup obyektlari oddiy plain object sifatida quriladi — node-telegram-bot-api
+// ularni to'g'ridan-to'g'ri serialize qiladi (README § Keyboards & formatting).
 
 // Asosiy menyu (doimiy reply keyboard)
 export function mainMenu() {
-  return new ReplyKeyboardBuilder()
-    .text("➕ Kirim/Chiqim kiritish")
-    .text("📊 Oylik Statistika")
-    .row()
-    .text("🎯 Byudjet Limiti")
-    .text("📂 Kategoriyalar")
-    .row()
-    .text("💡 AI Maslahat")
-    .build({ resize_keyboard: true });
+  return {
+    keyboard: [
+      [
+        { text: "➕ Kirim/Chiqim kiritish" },
+        { text: "📊 Oylik Statistika" },
+      ],
+      [
+        { text: "🎯 Byudjet Limiti" },
+        { text: "📂 Kategoriyalar" },
+      ],
+      [
+        { text: "💡 AI Maslahat" },
+      ],
+    ],
+    resize_keyboard: true,
+  };
 }
 
 // Kirim/chiqim turini tanlash (inline)
 export function transactionTypeKeyboard() {
-  return withCancel(
-    new InlineKeyboardBuilder()
-      .text("💰 Kirim", "tx:type:income")
-      .text("💸 Chiqim", "tx:type:expense")
-  );
+  return {
+    inline_keyboard: [
+      [
+        { text: "💰 Kirim", callback_data: "tx:type:income" },
+        { text: "💸 Chiqim", callback_data: "tx:type:expense" },
+      ],
+      [{ text: "❌ Bekor qilish", callback_data: "cancel" }],
+    ],
+  };
 }
 
-// Tranzaksiya uchun kategoriyalar ro'yxati.
-// Oxirida "kategoriasiz" va "bekor qilish" tugmalari bor.
-export function transactionCategoriesKeyboard(categories) {
-  const kb = new InlineKeyboardBuilder();
-  categories.forEach((category, index) => {
-    kb.text(category.title, `tx:cat:${category.id}`);
-    if ((index + 1) % 2 === 0) kb.row();
+// Kategoriyalarni 2 tadan inline tugmaga joylash.
+function categoryRows(categories, prefix) {
+  const rows = [];
+  let row = [];
+
+  categories.forEach((category) => {
+    row.push({ text: category.title, callback_data: `${prefix}:${category.id}` });
+    if (row.length === 2) {
+      rows.push(row);
+      row = [];
+    }
   });
-  kb.row().text("➖ Kategoriasiz", "tx:cat:none");
-  return withCancel(kb);
+
+  if (row.length > 0) rows.push(row);
+  return rows;
 }
 
-// Byudjet uchun kategoriyalar ro'yxati
-export function budgetCategoriesKeyboard(categories) {
-  const kb = new InlineKeyboardBuilder();
-  categories.forEach((category, index) => {
-    kb.text(category.title, `budget:cat:${category.id}`);
-    if ((index + 1) % 2 === 0) kb.row();
-  });
-  return withCancel(kb);
+// Tranzaksiya uchun kategoriyalar ro'yxati + "kategoriasiz" varianti.
+export function transactionCategoriesKeyboard(categories = []) {
+  return {
+    inline_keyboard: [
+      ...categoryRows(categories, "tx:cat"),
+      [{ text: "➖ Kategoriasiz", callback_data: "tx:cat:none" }],
+      [{ text: "❌ Bekor qilish", callback_data: "cancel" }],
+    ],
+  };
+}
+
+// Byudjet uchun kategoriyalar ro'yxati.
+export function budgetCategoriesKeyboard(categories = []) {
+  return {
+    inline_keyboard: [
+      ...categoryRows(categories, "budget:cat"),
+      [{ text: "❌ Bekor qilish", callback_data: "cancel" }],
+    ],
+  };
 }
 
 // Kategoriyalar bo'limining boshqaruv tugmalari
 export function categoryActionsKeyboard() {
-  return withCancel(new InlineKeyboardBuilder().text("➕ Yangi kategoriya qo'shish", "cat:add"));
+  return {
+    inline_keyboard: [
+      [{ text: "➕ Yangi kategoriya qo'shish", callback_data: "cat:add" }],
+      [{ text: "❌ Bekor qilish", callback_data: "cancel" }],
+    ],
+  };
 }
 
 // Yangi kategoriya turini tanlash (income/expense)
 export function categoryTypeKeyboard() {
-  return withCancel(
-    new InlineKeyboardBuilder()
-      .text("💰 Kirim", "cat:type:income")
-      .text("💸 Chiqim", "cat:type:expense")
-  );
+  return {
+    inline_keyboard: [
+      [
+        { text: "💰 Kirim", callback_data: "cat:type:income" },
+        { text: "💸 Chiqim", callback_data: "cat:type:expense" },
+      ],
+      [{ text: "❌ Bekor qilish", callback_data: "cancel" }],
+    ],
+  };
 }
 
 // Inline keyboardni olib tashlash (keyingi oddiy matn prompti uchun)

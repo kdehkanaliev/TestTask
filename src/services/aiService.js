@@ -112,6 +112,8 @@ export async function getAdvice(userId, month, year) {
           },
         ],
       }),
+      // Uzoq kechikishda so'rov bekor bo'lib, lokal fallback ishlatiladi
+      signal: AbortSignal.timeout(20_000),
     });
 
     if (!response.ok) {

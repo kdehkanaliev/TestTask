@@ -10,7 +10,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const hashToken = (token) => createHash("sha256").update(token).digest("hex");
 
-function verifyTelegramInitData(initData, botToken) {
+// Telegram initData HMAC-SHA256 tekshiruvi — boshqa middlewarelardan ham foydalanish uchun export.
+export function verifyTelegramInitData(initData, botToken) {
   if (!initData || !botToken) return false;
   const params = new URLSearchParams(initData);
   const hash = params.get("hash");
@@ -143,6 +144,92 @@ export async function tgCheck(req, res, next) {
       registered: Boolean(user),
       user: user ? publicUser(user) : null,
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function tgEmailCheck(req, res, next) {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== "string" || !EMAIL_RE.test(email)) {
+      throw new ApiError(400, "email talab qilinadi yoki noto'g'ri formatda");
+    }
+
+    const result = await db.query(
+      "SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL",
+      [email.toLowerCase()]
+    );
+
+    // Bot email kiritilishi bilan bu imkoniyatni darhol biladi:
+    // email band bo'lsa login rejimiga, bo'sh bo'lsa register rejimiga o'tadi.
+    res.json({ success: true, exists: Boolean(result.rows[0]) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function tgLogin(req, res, next) {
+  try {
+    const { tg_id, username, email, password, initData } = req.body;
+    if (!tg_id || !Number.isInteger(Number(tg_id)) || Number(tg_id) <= 0) {
+      throw new ApiError(400, "tg_id musbat butun son bo'lishi kerak");
+    }
+    if (!email || typeof email !== "string" || !EMAIL_RE.test(email)) {
+      throw new ApiError(400, "email noto'g'ri formatda");
+    }
+    if (!password) {
+      throw new ApiError(400, "password talab qilinadi");
+    }
+
+    // Telegram ulanishi tasdiqlangan bo'lsagina ishonamiz.
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (botToken && !verifyTelegramInitData(initData, botToken)) {
+      throw new ApiError(401, "Telegram autentifikatsiyasi tasdiqlanmadi");
+    }
+
+    const numericTgId = Number(tg_id);
+    const result = await db.query(
+      "SELECT * FROM users WHERE email = $1 AND deleted_at IS NULL",
+      [email.toLowerCase()]
+    );
+    let user = result.rows[0];
+
+    // Email mavjud bo'lsa parolni tekshiramiz (ishlatilgan email -> login).
+    if (!user?.password) {
+      throw new ApiError(401, "Email yoki parol noto'g'ri");
+    }
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      throw new ApiError(401, "Email yoki parol noto'g'ri");
+    }
+
+    // Parol to'g'ri — bu Telegram akkauntni email hisobiga bog'laymiz.
+    const updates = [];
+    const values = [];
+    let idx = 1;
+    if (user.tg_id !== numericTgId) {
+      updates.push(`tg_id = $${idx++}`);
+      values.push(numericTgId);
+    }
+    if (username && !user.username) {
+      updates.push(`username = $${idx++}`);
+      values.push(username);
+    }
+    if (updates.length) {
+      updates.push(`updated_at = $${idx++}`);
+      values.push(new Date());
+      const up = await db.query(
+        `UPDATE users SET ${updates.join(", ")} WHERE id = $${idx} RETURNING *`,
+        [...values, user.id]
+      );
+      user = up.rows[0];
+    }
+
+    const tokens = generateTokens(user);
+    await persistRefreshToken(user.id, tokens.refreshToken);
+
+    res.json({ success: true, mode: "login", user: publicUser(user), ...tokens });
   } catch (err) {
     next(err);
   }

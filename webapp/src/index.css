@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Telegram theme ranglari. Telegram ichida real qiymatlar
+  TelegramWebApp.themeParams dan JS orqali qo'yiladi (useTelegram.js);
+  quyidagilar brauzer (dev) uchun fallback qiymatlardir.
+*/
+:root {
+  --tg-base: #eef1f6;
+  --tg-deep: #dde3ed;
+  --tg-surface: rgba(255, 255, 255, 0.7);
+  --tg-card: rgba(255, 255, 255, 0.62);
+  --tg-border: rgba(17, 24, 39, 0.08);
+  --tg-text: #111827;
+  --tg-muted: #6b7280;
+  --tg-accent: #2f6bff;
+  --tg-soft: rgba(47, 107, 255, 0.14);
+  color-scheme: light;
+}
+
+html.dark {
+  --tg-base: #0b0e14;
+  --tg-deep: #121722;
+  --tg-surface: rgba(255, 255, 255, 0.07);
+  --tg-card: rgba(255, 255, 255, 0.05);
+  --tg-border: rgba(255, 255, 255, 0.09);
+  --tg-text: #f2f4f8;
+  --tg-muted: #9aa4b4;
+  --tg-accent: #7aa2ff;
+  --tg-soft: rgba(122, 162, 255, 0.16);
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-base text-text;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  /* Telegram ichida pastga tortganda native refresh chiqmasligi uchun */
+  overscroll-behavior-y: contain;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+@layer components {
+  /* Glassmorphism asosiy karta */
+  .glass {
+    @apply rounded-3xl border border-border bg-card backdrop-blur-2xl;
+  }
+  .glass-strong {
+    @apply rounded-3xl border border-border bg-surface backdrop-blur-2xl;
+  }
+  /* Barmoq bilan bosish uchun qulay tugma */
+  .touch-btn {
+    @apply select-none transition-transform duration-150 active:scale-95;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Orqa fonda harakatlanuvchi yumshoq nur (aurora) */
+@keyframes aurora {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(24px, -20px) scale(1.14);
+  }
+}
+.aurora-blob {
+  @apply pointer-events-none fixed rounded-full blur-3xl;
+  background: linear-gradient(135deg, var(--tg-soft), transparent 72%);
+  animation: aurora 14s ease-in-out infinite;
+}

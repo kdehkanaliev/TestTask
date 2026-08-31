@@ -9,7 +9,7 @@ const API_BASE_URL = (process.env.API_BASE_URL || "http://localhost:3000/api").r
   /\/+$/,
   ""
 );
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
+const BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || "").trim();
 
 // Backend'dan tushunarli xatolik xabari olib keluvchi xato klassi.
 export class BotApiError extends Error {
@@ -63,6 +63,8 @@ async function request(method, path, { tgId, json, query } = {}) {
       method,
       headers,
       body: json !== undefined ? JSON.stringify(json) : undefined,
+      // Pastki qatlam (backend) javob bermasa ham bot osilib qolmaydi
+      signal: AbortSignal.timeout(45_000),
     });
   } catch (err) {
     // Backend o'chik yoki tarmoq xatosi
@@ -93,6 +95,28 @@ const api = {
   // 1-qadam: foydalanuvchi tizimda bormi?
   tgCheck(tgId) {
     return request("GET", "/users/auth/tg-check", { tgId });
+  },
+
+  // 1-qadam: email bandmi yoki bo'shmi? (login yoki register rejimini tanlash uchun)
+  tgEmailCheck(tgId, email) {
+    return request("POST", "/users/auth/tg-email-check", {
+      tgId,
+      json: { email },
+    });
+  },
+
+  // Email band bo'lsa: parol tekshirib, tg_id'ni shu hisobga bog'lash (login)
+  tgLogin({ tgId, username, email, password }) {
+    return request("POST", "/users/auth/tg-login", {
+      tgId,
+      json: {
+        tg_id: Number(tgId),
+        username,
+        email,
+        password,
+        initData: buildInitData(tgId, username),
+      },
+    });
   },
 
   // 3-qadam: email+parol bilan to'liq ro'yxatdan o'tkazish
@@ -126,7 +150,13 @@ const api = {
   createTransaction(tgId, { category_id, amount, type, comment }) {
     return request("POST", "/transactions", {
       tgId,
-      json: { category_id, amount, type, comment },
+      json: {
+        // backend null category_id'ni rad etadi — null bo'lsa maydonni yubormaymiz
+        ...(category_id ? { category_id } : {}),
+        amount,
+        type,
+        comment,
+      },
     });
   },
 
