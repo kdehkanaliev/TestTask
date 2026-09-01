@@ -10,12 +10,25 @@ import { verifyTelegramInitData } from "../controllers/authController.js";
 async function telegramWebAppAuth(req, res, next) {
   try {
     const initData = req.headers["x-telegram-init-data"];
-    if (!initData) return false;
+    if (!initData) {
+      console.log("[TG-WebApp] initData header YO'Q path=" + req.originalUrl + " headers=" + JSON.stringify(Object.keys(req.headers)));
+      return false;
+    }
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    if (!botToken) return false;
+    if (!botToken) {
+      console.log("[TG-WebApp] botToken BO'SH path=" + req.originalUrl);
+      return false;
+    }
 
-    if (!verifyTelegramInitData(initData, botToken)) {
+    const verified = verifyTelegramInitData(initData, botToken);
+    console.log(
+      "[TG-WebApp] initData_len=" + initData.length +
+      " botToken_len=" + botToken.length +
+      " verified=" + verified +
+      " path=" + req.originalUrl
+    );
+    if (!verified) {
       res.status(401).json({ success: false, message: "Telegram initData noto'g'ri" });
       return true; // javob yuborildi
     }
