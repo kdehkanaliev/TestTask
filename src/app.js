@@ -18,11 +18,17 @@ import { startBot } from "./bot/bot.js";
 
 const app = express();
 
-// Faqat ruxsat etilgan origin'larga CORS. Bo'sh bo'lsa (dev) — hamma origin ruxsat etiladi.
-const allowedOrigins = (process.env.CORS_ORIGIN || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+// Ruxsat etilgan origin'lar. Avval CORS_ORIGIN env'dan, so'ngra
+// birinchi-parti Admin Panel origin'i (Vercel) qo'shiladi.
+// Bo'sh bo'lsa (dev) — barcha origin'larga ruxsat beriladi.
+const ADMIN_PANEL_ORIGIN = "https://test-task-adminka.vercel.app";
+const allowedOrigins = [
+  ...(process.env.CORS_ORIGIN || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+  ADMIN_PANEL_ORIGIN,
+];
 
 app.use(helmet());
 app.use(
