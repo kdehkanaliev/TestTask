@@ -262,3 +262,128 @@ export async function broadcast(req, res, next) {
     next(err);
   }
 }
+
+// ============ Global kategoriyalar (admin) ============
+// Global kategoriyalar `user_id = NULL` bo'lgan qatorlardir —
+// barcha foydalanuvchilarga ko'rinadi (categoryController getCategories
+// allaqachon `user_id IS NULL` ni inobatga oladi).
+
+// GET /api/admin/categories?type=income|expense
+export async function getGlobalCategories(req, res, next) {
+  try {
+    const { type } = req.query;
+    const params = [];
+    let sql = "SELECT * FROM categories WHERE user_id IS NULL";
+    if (type && ["income", "expense"].includes(type)) {
+      params.push(type);
+      sql += ` AND type = $1`;
+    }
+    sql += " ORDER BY id ASC";
+
+    const result = await db.query(sql, params);
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/admin/categories
+export async function createGlobalCategory(req, res, next) {
+  try {
+    const { title, type } = req.body;
+    if (!title || typeof title !== "string" || !title.trim()) {
+      throw new ApiError(400, "title talab qilinadi");
+    }
+    if (!["income", "expense"].includes(type)) {
+      throw new ApiError(400, "type 'income' yoki 'expense' bo'lishi kerak");
+    }
+
+    // Takrorlanuvchi nomni tekshiramiz (global darajada).
+    const dup = await db.query(
+      "SELECT id FROM categories WHERE user_id IS NULL AND LOWER(TRIM(title)) = LOWER($1)",
+      [title.trim()]
+    );
+    if (dup.rows[0]) {
+      throw new ApiError(409, "Bu nomdagi global kategoriya allaqachon mavjud");
+    }
+
+    const result = await db.query(
+      "INSERT INTO categories (user_id, title, type) VALUES (NULL, $1, $2) RETURNING *",
+      [title.trim(), type]
+    );
+
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// PATCH /api/admin/categories/:id
+export async function updateGlobalCategory(req, res, next) {
+  try {
+    const id = parseId(req.params.id, "id");
+    const { title, type } = req.body;
+
+    const existing = await db.query(
+      "SELECT * FROM categories WHERE id = $1 AND user_id IS NULL",
+      [id]
+    );
+    if (!existing.rows[0]) {
+      throw new ApiError(404, "Global kategoriya topilmadi");
+    }
+
+    const fields = [];
+    const values = [];
+    let idx = 1;
+
+    if (title !== undefined) {
+      if (typeof title !== "string" || !title.trim()) {
+        throw new ApiError(400, "title bo'sh bo'lishi mumkin emas");
+      }
+      fields.push(`title = $${idx++}`);
+      values.push(title.trim());
+    }
+    if (type !== undefined) {
+      if (!["income", "expense"].includes(type)) {
+        throw new ApiError(400, "type 'income' yoki 'expense' bo'lishi kerak");
+      }
+      fields.push(`type = $${idx++}`);
+      values.push(type);
+    }
+    if (!fields.length) {
+      throw new ApiError(400, "Yangilash uchun title yoki type ko'rsating");
+    }
+
+    values.push(id);
+    const result = await db.query(
+      `UPDATE categories SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// DELETE /api/admin/categories/:id
+export async function deleteGlobalCategory(req, res, next) {
+  try {
+    const id = parseId(req.params.id, "id");
+
+    const existing = await db.query(
+      "SELECT id FROM categories WHERE id = $1 AND user_id IS NULL",
+      [id]
+    );
+    if (!existing.rows[0]) {
+      throw new ApiError(404, "Global kategoriya topilmadi");
+    }
+
+    // Kategoriyaga bog'langan tranzaksiyalar category_id = NULL bo'ladi
+    // (FK ON DELETE SET NULL), shu sababli ma'lumotlar yo'qolmaydi.
+    await db.query("DELETE FROM categories WHERE id = $1", [id]);
+    res.json({ success: true, message: "Global kategoriya o'chirildi" });
+  } catch (err) {
+    next(err);
+  }
+}

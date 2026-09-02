@@ -14,6 +14,10 @@ import {
   getUsersList,
   setUserStatus,
   broadcast,
+  getGlobalCategories,
+  createGlobalCategory,
+  updateGlobalCategory,
+  deleteGlobalCategory,
 } from "../controllers/adminController.js";
 
 const router = Router();
@@ -133,5 +137,93 @@ router.patch("/users/:id/status", setUserStatus);
  *         description: Faqat adminlar uchun
  */
 router.post("/broadcast", broadcast);
+
+/**
+ * @swagger
+ * /api/admin/categories:
+ *   get:
+ *     summary: Global kategoriyalar ro'yxati (admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema: { type: string, enum: [income, expense] }
+ *     responses:
+ *       200:
+ *         description: Global kategoriyalar
+ */
+router.get("/categories", getGlobalCategories);
+
+/**
+ * @swagger
+ * /api/admin/categories:
+ *   post:
+ *     summary: Global kategoriya yaratish (admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title, type]
+ *             properties:
+ *               title: { type: string }
+ *               type: { type: string, enum: [income, expense] }
+ *     responses:
+ *       201:
+ *         description: Kategoriya yaratildi
+ */
+router.post("/categories", createGlobalCategory);
+
+/**
+ * @swagger
+ * /api/admin/categories/{id}:
+ *   patch:
+ *     summary: Global kategoriyani tahrirlash (admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title: { type: string }
+ *               type: { type: string, enum: [income, expense] }
+ *     responses:
+ *       200:
+ *         description: Kategoriya yangilandi
+ */
+router.patch("/categories/:id", updateGlobalCategory);
+
+/**
+ * @swagger
+ * /api/admin/categories/{id}:
+ *   delete:
+ *     summary: Global kategoriyani o'chirish (admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Kategoriya o'chirildi
+ */
+router.delete("/categories/:id", deleteGlobalCategory);
 
 export default router;
