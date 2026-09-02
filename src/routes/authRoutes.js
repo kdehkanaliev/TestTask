@@ -6,13 +6,12 @@ import {
   tgEmailCheck,
   tgLogin,
   tgRegister,
-  getAllUsers,
   updateUser,
   softDeleteUser,
   refreshToken,
   logout,
 } from "../controllers/authController.js";
-import { authMiddleware, roleCheck } from "../middlewares/authMiddleware.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 
@@ -219,31 +218,6 @@ router.post("/users/auth/refresh", refreshToken);
  *         description: Muvaffaqiyatli chiqish
  */
 router.post("/users/auth/logout", logout);
-
-/**
- * @swagger
- * /api/admin/users:
- *   get:
- *     summary: Barcha foydalanuvchilar ro'yxati (faqat adminlar uchun)
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema: { type: integer }
- *         description: Sahifa raqami
- *       - in: query
- *         name: limit
- *         schema: { type: integer }
- *         description: Bitta sahifadagi son
- *     responses:
- *       200:
- *         description: Foydalanuvchilar ro'yxati
- *       403:
- *         description: Faqat adminlar uchun
- */
-router.get("/admin/users", authMiddleware, roleCheck("admin"), getAllUsers);
 
 /**
  * @swagger

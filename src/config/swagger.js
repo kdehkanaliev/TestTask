@@ -30,6 +30,7 @@ const options = {
       { name: "Budgets", description: "Oylik byudjet limitlari" },
       { name: "Stats", description: "Statistika va tahlil" },
       { name: "AI", description: "AI moliya maslahatlari" },
+      { name: "Admin", description: "Admin panel boshqaruvi (faqat adminlar)" },
     ],
   },
   apis: ["./src/routes/*.js", "./src/controllers/*.js"],

@@ -12,6 +12,7 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import budgetRoutes from "./routes/budgetRoutes.js";
 import statsRoutes from "./routes/statsRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import errorMiddleware from "./middlewares/errorMiddleware.js";
 import { startBot } from "./bot/bot.js";
 
@@ -78,6 +79,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/budgets", budgetRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 404 handler
 app.use((req, res) => {
